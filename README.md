@@ -6,9 +6,9 @@ The client provides basic policy creation, as well as an editing interface (via 
 
 ## Dependencies
 
-- Golang 1.19
-- Node.js
-- Docker for running the [Cerbos Policy Decision Point (PDP)](https://docs.cerbos.dev/cerbos/latest/installation/container.html)
+- Docker for running the [Cerbos Policy Decision Point (PDP)](https://docs.cerbos.dev/cerbos/latest/installation/container.html), or both services via `docker-compose`
+- Golang 1.19 (required if running manually)
+- Node.js (required if running manually)
 
 ## Getting started
 
