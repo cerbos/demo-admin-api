@@ -12,6 +12,8 @@ The client provides basic policy creation, as well as an editing interface (via 
 
 ## Getting started
 
+### Manually
+
 1. Start up the Cerbos PDP instance docker container. This will be called by the Go app to check authorization.
 
 ```sh
@@ -36,6 +38,12 @@ go run main.go
 ```
 
 4. Open the web app at `localhost:8090`
+
+### Docker-compose
+
+```sh
+docker-compose up -d
+```
 
 ## Audit logs
 

@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"os"
 	"strings"
 
 	policyv1 "github.com/cerbos/cerbos/api/genpb/cerbos/policy/v1"
@@ -14,9 +15,8 @@ import (
 )
 
 const (
-	username      = "cerbos"
-	password      = "randomHash"
-	clientAddress = "dns:///localhost:3593"
+	username = "cerbos"
+	password = "randomHash"
 )
 
 const (
@@ -24,6 +24,10 @@ const (
 	policyTypePrincipal   string = "principal"
 	policyTypeDerivedRole string = "derivedRole"
 )
+
+type configHandler struct {
+	host string
+}
 
 func getKey(p *policyv1.Policy) string {
 	var key string
@@ -58,11 +62,11 @@ type ListPolicyIDResponse struct {
 	IDs []string `json:"policyIds"`
 }
 
-func listPolicies(w http.ResponseWriter, req *http.Request) {
+func (h *configHandler) listPolicies(w http.ResponseWriter, req *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
 	//c, err := client.NewAdminClientWithCredentials("unix:/tmp/sock/cerbos.grpc", username, password, client.WithPlaintext())
-	c, err := client.NewAdminClientWithCredentials(clientAddress, username, password, client.WithPlaintext())
+	c, err := client.NewAdminClientWithCredentials(h.host, username, password, client.WithPlaintext())
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -87,7 +91,7 @@ type GetPoliciesResponse struct {
 	Policies []string `json:"policies"`
 }
 
-func getPolicy(w http.ResponseWriter, req *http.Request) {
+func (h *configHandler) getPolicy(w http.ResponseWriter, req *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
 	ids, ok := req.URL.Query()["id"]
@@ -95,7 +99,7 @@ func getPolicy(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	c, err := client.NewAdminClientWithCredentials(clientAddress, username, password, client.WithPlaintext())
+	c, err := client.NewAdminClientWithCredentials(h.host, username, password, client.WithPlaintext())
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -144,7 +148,7 @@ type PolicyKeyResponse struct {
 	ID string `json:"id"`
 }
 
-func createPolicy(w http.ResponseWriter, req *http.Request) {
+func (h *configHandler) createPolicy(w http.ResponseWriter, req *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
 	var params CreatePolicyPayload
@@ -219,7 +223,7 @@ func createPolicy(w http.ResponseWriter, req *http.Request) {
 
 	ps = ps.AddPolicies(p)
 
-	c, err := client.NewAdminClientWithCredentials(clientAddress, username, password, client.WithPlaintext())
+	c, err := client.NewAdminClientWithCredentials(h.host, username, password, client.WithPlaintext())
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -256,7 +260,7 @@ func loadAndValidatePolicy(params UpdatePolicyPayload) (*client.PolicySet, error
 	return ps, nil
 }
 
-func validatePolicy(w http.ResponseWriter, req *http.Request) {
+func (h *configHandler) validatePolicy(w http.ResponseWriter, req *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
 	var params UpdatePolicyPayload
@@ -271,7 +275,7 @@ func validatePolicy(w http.ResponseWriter, req *http.Request) {
 	}
 }
 
-func updatePolicy(w http.ResponseWriter, req *http.Request) {
+func (h *configHandler) updatePolicy(w http.ResponseWriter, req *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
 	var params UpdatePolicyPayload
@@ -286,7 +290,7 @@ func updatePolicy(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	c, err := client.NewAdminClientWithCredentials(clientAddress, username, password, client.WithPlaintext())
+	c, err := client.NewAdminClientWithCredentials(h.host, username, password, client.WithPlaintext())
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -309,10 +313,10 @@ func updatePolicy(w http.ResponseWriter, req *http.Request) {
 
 }
 
-func getAuditLog(w http.ResponseWriter, req *http.Request) {
+func (h *configHandler) getAuditLog(w http.ResponseWriter, req *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
-	c, err := client.NewAdminClientWithCredentials(clientAddress, username, password, client.WithPlaintext())
+	c, err := client.NewAdminClientWithCredentials(h.host, username, password, client.WithPlaintext())
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -338,23 +342,28 @@ func getAuditLog(w http.ResponseWriter, req *http.Request) {
 }
 
 func main() {
+	h := configHandler{"dns:///cerbos:3593"}
+	if a := os.Getenv("CERBOS_HOST"); a != "" {
+		h.host = fmt.Sprintf("dns:///%s:3593", a)
+	}
+
 	http.Handle("/", http.FileServer(http.Dir("./client/dist")))
 
-	http.HandleFunc("/policies", listPolicies)
+	http.HandleFunc("/policies", h.listPolicies)
 	http.HandleFunc("/policy", func(w http.ResponseWriter, req *http.Request) {
 		switch req.Method {
 		case "GET":
-			getPolicy(w, req)
+			h.getPolicy(w, req)
 		case "POST":
-			createPolicy(w, req)
+			h.createPolicy(w, req)
 		case "PATCH":
-			updatePolicy(w, req)
+			h.updatePolicy(w, req)
 		default:
 			http.Error(w, fmt.Sprintf("Method not supported: %s", req.Method), http.StatusMethodNotAllowed)
 		}
 	})
-	http.HandleFunc("/validate", validatePolicy)
-	http.HandleFunc("/auditlog", getAuditLog)
+	http.HandleFunc("/validate", h.validatePolicy)
+	http.HandleFunc("/auditlog", h.getAuditLog)
 
 	http.ListenAndServe(":8090", nil)
 }
