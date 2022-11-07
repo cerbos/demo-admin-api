@@ -183,45 +183,21 @@ func (h *configHandler) createPolicy(w http.ResponseWriter, req *http.Request) {
 	}
 
 	ps := client.NewPolicySet()
-	p := &policyv1.Policy{
-		ApiVersion: "api.cerbos.dev/v1",
-	}
 
 	switch params.PolicyKind {
 	case policyTypeResource:
-		p.PolicyType = &policyv1.Policy_ResourcePolicy{
-			ResourcePolicy: &policyv1.ResourcePolicy{
-				Resource: params.Name,
-				Version:  params.Version,
-				Scope:    params.Scope,
-			},
-		}
-		//p := client.NewResourcePolicy(params.Name, params.Version)
-		//ps = ps.AddResourcePolicies(p)
+		p := client.NewResourcePolicy(params.Name, params.Version).WithScope(params.Scope)
+		ps = ps.AddResourcePolicies(p)
 	case policyTypePrincipal:
-		p.PolicyType = &policyv1.Policy_PrincipalPolicy{
-			PrincipalPolicy: &policyv1.PrincipalPolicy{
-				Principal: params.Name,
-				Version:   params.Version,
-				Scope:     params.Scope,
-			},
-		}
-		//p := client.NewPrincipalPolicy(params.Name, params.Version)
-		//ps = ps.AddPrincipalPolicies(p)
+		p := client.NewPrincipalPolicy(params.Name, params.Version).WithScope(params.Scope)
+		ps = ps.AddPrincipalPolicies(p)
 	case policyTypeDerivedRole:
-		p.PolicyType = &policyv1.Policy_DerivedRoles{
-			DerivedRoles: &policyv1.DerivedRoles{
-				Name: params.Name,
-			},
-		}
-		//dr := client.NewDerivedRoles(params.Name)
-		//ps = ps.AddDerivedRoles(dr)
+		dr := client.NewDerivedRoles(params.Name)
+		ps = ps.AddDerivedRoles(dr)
 	default:
 		http.Error(w, "`policyType` must be one of: "+strings.Join([]string{policyTypeResource, policyTypePrincipal, policyTypeDerivedRole}, ", "), http.StatusBadRequest)
 		return
 	}
-
-	ps = ps.AddPolicies(p)
 
 	c, err := client.NewAdminClientWithCredentials(h.host, username, password, client.WithPlaintext())
 	if err != nil {
@@ -234,7 +210,7 @@ func (h *configHandler) createPolicy(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	resp, err := json.Marshal(PolicyKeyResponse{getKey(p)})
+	resp, err := json.Marshal(PolicyKeyResponse{getKey(ps.GetPolicies()[0])})
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
