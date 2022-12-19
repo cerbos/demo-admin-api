@@ -318,7 +318,7 @@ func (h *configHandler) getAuditLog(w http.ResponseWriter, req *http.Request) {
 }
 
 func main() {
-	h := configHandler{"dns:///cerbos:3593"}
+	h := configHandler{"dns:///localhost:3593"}
 	if a := os.Getenv("CERBOS_HOST"); a != "" {
 		h.host = fmt.Sprintf("dns:///%s:3593", a)
 	}
