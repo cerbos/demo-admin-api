@@ -4,6 +4,7 @@ WORKDIR /app
 COPY ["client/package.json", "client/package-lock.json*", "./"]
 RUN npm i
 COPY client/ .
+RUN rm -rf .parcel-cache/
 RUN npm run build
 
 FROM golang:1.19-alpine
