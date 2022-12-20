@@ -4,6 +4,7 @@ WORKDIR /app
 COPY ["client/package.json", "client/package-lock.json*", "./"]
 RUN npm i
 COPY client/ .
+# https://github.com/parcel-bundler/parcel/issues/7126
 RUN rm -rf .parcel-cache/
 RUN npm run build
 
