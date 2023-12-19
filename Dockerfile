@@ -8,7 +8,7 @@ COPY client/ .
 RUN rm -rf .parcel-cache/
 RUN npm run build
 
-FROM golang:1.19-alpine
+FROM golang:1.21-alpine
 COPY --from=build /app/dist /app/client/dist
 WORKDIR /app
 COPY go.mod ./
