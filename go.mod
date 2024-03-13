@@ -8,7 +8,7 @@ require (
 	github.com/cerbos/cerbos v0.31.0
 	github.com/cerbos/cerbos/api/genpb v0.0.0-20231026063842-f134903b8ddb
 	github.com/goccy/go-yaml v1.9.6
-	google.golang.org/protobuf v1.31.0
+	google.golang.org/protobuf v1.33.0
 )
 
 require (
