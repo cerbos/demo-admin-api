@@ -15,7 +15,7 @@
     "@types/react": "^18.0.24",
     "@types/react-dom": "^18.0.8",
     "buffer": "^6.0.3",
-    "parcel": "^2.7.0",
+    "parcel": "^2.16.4",
     "prettier": "^2.7.1",
     "process": "^0.11.10"
   }
